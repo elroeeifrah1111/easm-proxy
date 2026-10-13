@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: easm-proxy
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: SHODAN_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
