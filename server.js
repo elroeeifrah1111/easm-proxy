@@ -88,6 +88,21 @@ app.get('/api/github/search', async (req, res) => {
   }
 });
 
+// Friendly landing page at root (this is a backend, not a website).
+app.get('/', (_req, res) => {
+  res.type('html').send(`<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EASM Proxy</title></head><body style="font-family:system-ui;max-width:600px;margin:40px auto;padding:0 16px">
+<h1>🛡️ EASM Proxy</h1>
+<p>שרת עזר מאובטח לסורק EASM — מחזיק מפתחות API בצד השרת כדי שהדף הציבורי לא ייחשף אליהם.</p>
+<ul>
+<li><a href="/api/health">/api/health</a> — בדיקת תקינות</li>
+<li><code>/api/github/search?q=...</code> — חיפוש קוד בגיטהאב</li>
+</ul>
+<p>זה לא דף לשימוש ישיר — הסורק קורא לו מאחורי הקלעים.</p>
+</body></html>`);
+});
+
 // 404 for everything else
 app.use((_req, res) => res.status(404).json({ ok: false, error: 'not_found' }));
 
