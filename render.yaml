@@ -10,7 +10,5 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22
-      - key: SHODAN_API_KEY
-        sync: false
       - key: GITHUB_TOKEN
         sync: false

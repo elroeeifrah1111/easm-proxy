@@ -9,7 +9,6 @@
  * Endpoints:
  *   GET /api/health
  *   GET /api/github/search?q=<query>        → GitHub code search
- *   GET /api/shodan/search?query=<query>    → Shodan host search
  *
  * Defenses: per-IP rate limiting, strict query validation, no key logging.
  */
@@ -18,7 +17,6 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
 const PORT = process.env.PORT || 3000;
-const SHODAN_API_KEY = process.env.SHODAN_API_KEY || '';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 const FETCH_TIMEOUT_MS = 25000;
 
@@ -40,7 +38,6 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     github: Boolean(GITHUB_TOKEN),
-    shodan: Boolean(SHODAN_API_KEY),
     time: new Date().toISOString(),
   });
 });
@@ -91,40 +88,9 @@ app.get('/api/github/search', async (req, res) => {
   }
 });
 
-// --- Shodan host search proxy ---
-// query must look like a Shodan filter query (letters, digits, .:*- and spaces).
-app.get('/api/shodan/search', async (req, res) => {
-  if (!SHODAN_API_KEY) {
-    return res.status(503).json({ ok: false, error: 'shodan_not_configured' });
-  }
-  const query = String(req.query.query || '').trim();
-  if (!query || query.length > 200 || !/^[a-zA-Z0-9.\-_:* ]+$/.test(query)) {
-    return res.status(400).json({ ok: false, error: 'bad_query' });
-  }
-  try {
-    const url = 'https://api.shodan.io/shodan/host/search?key=' +
-      encodeURIComponent(SHODAN_API_KEY) + '&query=' + encodeURIComponent(query);
-    const resp = await fetchWithTimeout(url);
-    if (!resp.ok) {
-      return res.status(502).json({ ok: false, error: 'shodan_error', status: resp.status });
-    }
-    const data = await resp.json();
-    const matches = (data.matches || []).slice(0, 50).map((m) => ({
-      ip: m.ip_str || '',
-      port: m.port || 0,
-      product: m.product || '',
-      hostnames: m.hostnames || [],
-    }));
-    res.json({ ok: true, total: data.total || 0, matches });
-  } catch (err) {
-    res.status(502).json({ ok: false, error: 'shodan_unreachable' });
-  }
-});
-
 // 404 for everything else
 app.use((_req, res) => res.status(404).json({ ok: false, error: 'not_found' }));
 
 app.listen(PORT, () => {
-  console.log(`[easm-proxy] listening on ${PORT} ` +
-    `(github=${Boolean(GITHUB_TOKEN)}, shodan=${Boolean(SHODAN_API_KEY)})`);
+  console.log(`[easm-proxy] listening on ${PORT} (github=${Boolean(GITHUB_TOKEN)})`);
 });
